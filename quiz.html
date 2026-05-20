@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airconf Training – Quiz Blaster</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;600&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{
+            font-family:'Inter',sans-serif;
+            background:#0a0e1a;
+            color:#e2e8f0;
+            min-height:100vh;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            overflow:hidden;
+            position:relative;
+        }
+        /* starfield */
+        #stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+        .star{position:absolute;border-radius:50%;background:#fff;animation:twinkle linear infinite;}
+        @keyframes twinkle{0%,100%{opacity:0.1}50%{opacity:0.9}}
+
+        .screen{position:relative;z-index:1;width:100%;max-width:680px;padding:1rem;}
+
+        /* INTRO */
+        #intro{text-align:center;}
+        .game-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;color:#38bdf8;text-shadow:0 0 20px #38bdf8aa;margin-bottom:.3rem;}
+        .game-sub{color:#64748b;font-size:.95rem;margin-bottom:2rem;}
+        .start-btn{
+            background:linear-gradient(135deg,#0ea5e9,#6366f1);
+            color:#fff;border:none;padding:.9rem 2.5rem;font-size:1.1rem;font-family:'Orbitron',sans-serif;
+            border-radius:50px;cursor:pointer;box-shadow:0 0 25px #0ea5e966;
+            transition:transform .15s,box-shadow .15s;
+        }
+        .start-btn:hover{transform:scale(1.05);box-shadow:0 0 35px #0ea5e9aa;}
+
+        /* HUD */
+        #hud{
+            display:none;justify-content:space-between;align-items:center;
+            margin-bottom:1rem;
+            background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:.6rem 1rem;
+        }
+        .hud-item{display:flex;flex-direction:column;align-items:center;font-size:.75rem;color:#64748b;gap:2px;}
+        .hud-val{font-family:'Orbitron',sans-serif;font-size:1.1rem;color:#38bdf8;}
+        #timer-bar-wrap{flex:1;margin:0 1rem;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;}
+        #timer-bar{height:100%;background:linear-gradient(90deg,#0ea5e9,#6366f1);border-radius:4px;transition:width .2s linear;}
+
+        /* QUESTION CARD */
+        #qcard{
+            display:none;
+            background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:1.5rem;
+            animation:slideIn .3s ease;
+        }
+        @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .q-badge{
+            display:inline-block;background:linear-gradient(135deg,#0ea5e9,#6366f1);
+            color:#fff;font-size:.75rem;font-family:'Orbitron',sans-serif;
+            padding:3px 12px;border-radius:20px;margin-bottom:.8rem;
+        }
+        .q-text{font-size:1.05rem;font-weight:600;line-height:1.5;margin-bottom:1.2rem;color:#f1f5f9;}
+        .options{display:flex;flex-direction:column;gap:.6rem;}
+        .opt{
+            background:#1e293b;border:2px solid #1e293b;border-radius:10px;
+            padding:.75rem 1rem;cursor:pointer;font-size:.95rem;
+            transition:border-color .15s,background .15s,transform .1s;
+            display:flex;align-items:center;gap:.7rem;
+        }
+        .opt:hover:not(.locked){border-color:#38bdf8;background:#162032;transform:translateX(4px);}
+        .opt .letter{
+            width:28px;height:28px;border-radius:50%;background:#0ea5e9;
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;flex-shrink:0;
+        }
+        .opt.correct{border-color:#22c55e;background:#052e16;}
+        .opt.correct .letter{background:#22c55e;}
+        .opt.wrong{border-color:#ef4444;background:#2d0a0a;}
+        .opt.wrong .letter{background:#ef4444;}
+        .opt.reveal{border-color:#22c55e55;background:#052e1633;}
+        .locked{cursor:default;}
+
+        /* FEEDBACK */
+        #feedback{
+            margin-top:1rem;padding:.75rem 1rem;border-radius:10px;
+            font-size:.9rem;font-weight:600;display:none;
+            animation:pop .25s ease;
+        }
+        @keyframes pop{from{transform:scale(.9)}to{transform:scale(1)}}
+        #feedback.ok{background:#052e16;border:1px solid #22c55e;color:#4ade80;}
+        #feedback.ko{background:#2d0a0a;border:1px solid #ef4444;color:#f87171;}
+
+        .next-btn{
+            display:none;margin-top:1rem;width:100%;
+            background:linear-gradient(135deg,#0ea5e9,#6366f1);
+            color:#fff;border:none;padding:.75rem;font-size:1rem;font-family:'Orbitron',sans-serif;
+            border-radius:10px;cursor:pointer;transition:opacity .2s;
+        }
+        .next-btn:hover{opacity:.85;}
+
+        /* RESULTS */
+        #results{display:none;text-align:center;}
+        .trophy{font-size:4rem;margin-bottom:.5rem;}
+        .result-title{font-family:'Orbitron',sans-serif;font-size:1.6rem;color:#38bdf8;margin-bottom:.5rem;}
+        .result-score{font-size:3rem;font-family:'Orbitron',sans-serif;margin:.5rem 0;}
+        .result-grade{font-size:1rem;color:#94a3b8;margin-bottom:1.5rem;}
+        .breakdown{text-align:left;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:1rem;margin-bottom:1.5rem;}
+        .bk-row{display:flex;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid #1e293b;font-size:.88rem;}
+        .bk-row:last-child{border:none;}
+        .bk-ok{color:#4ade80;} .bk-ko{color:#f87171;}
+        .replay-btn{
+            background:linear-gradient(135deg,#0ea5e9,#6366f1);
+            color:#fff;border:none;padding:.8rem 2rem;font-size:1rem;font-family:'Orbitron',sans-serif;
+            border-radius:50px;cursor:pointer;transition:transform .15s;
+        }
+        .replay-btn:hover{transform:scale(1.05);}
+
+        /* XP bar */
+        .xp-bar-wrap{background:#1e293b;border-radius:4px;height:6px;margin:4px 0 0;width:80px;overflow:hidden;}
+        .xp-bar{height:100%;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:4px;transition:width .4s;}
+
+        /* particles */
+        .particle{
+            position:fixed;pointer-events:none;z-index:99;
+            width:10px;height:10px;border-radius:50%;
+            animation:burst .8s ease-out forwards;
+        }
+        @keyframes burst{to{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0;}}
+    </style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<!-- INTRO -->
+<div id="intro" class="screen">
+    <div class="game-title">⚡ AIRCONF</div>
+    <div style="font-family:'Orbitron',sans-serif;font-size:1rem;color:#6366f1;margin-bottom:.2rem;">TRAINING BLASTER</div>
+    <div class="game-sub">7 questions · 20 seconds each · beat your high score!</div>
+    <input id="player-name" type="text" placeholder="Enter your name…" maxlength="32"
+           style="margin-bottom:1rem;padding:.7rem 1.2rem;border-radius:50px;border:2px solid #1e293b;background:#0f172a;color:#f1f5f9;font-size:1rem;width:260px;text-align:center;outline:none;"
+           onkeydown="if(event.key==='Enter')startGame()"
+    />
+    <br>
+    <button class="start-btn" onclick="startGame()">LAUNCH MISSION 🚀</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen" style="display:none">
+    <div id="hud">
+        <div class="hud-item">
+            <span id="q-counter" class="hud-val">1/7</span>
+            <span>QUESTION</span>
+        </div>
+        <div id="timer-bar-wrap"><div id="timer-bar" style="width:100%"></div></div>
+        <div class="hud-item">
+            <span id="score-val" class="hud-val">0</span>
+            <span>SCORE</span>
+        </div>
+        <div class="hud-item">
+            <span id="streak-val" class="hud-val">🔥0</span>
+            <span>STREAK</span>
+        </div>
+    </div>
+
+    <div id="qcard">
+        <div class="q-badge" id="q-badge">Q1 / 7</div>
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options"></div>
+        <div id="feedback"></div>
+        <button class="next-btn" id="next-btn" onclick="nextQuestion()">NEXT →</button>
+    </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="screen">
+    <div class="trophy" id="trophy">🏆</div>
+    <div class="result-title">MISSION COMPLETE</div>
+    <div class="result-score" id="final-score"></div>
+    <div class="result-grade" id="final-grade"></div>
+    <div class="breakdown" id="breakdown"></div>
+    <button class="replay-btn" onclick="replay()">🔄 RETRY MISSION</button>
+</div>
+
+<script>
+    // ── Starfield ──────────────────────────────────────────────────────────────
+    const cvs = document.getElementById('stars');
+    const sctx = cvs.getContext('2d');
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+    for (let i = 0; i < 120; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const sz = Math.random()*2+1;
+        s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s`;
+        document.body.appendChild(s);
+    }
+
+    let playerName = "Anonymous";
+    // ── JSONbin config ────────────────────────────────────────────────────────
+    const SERVER = "http://192.168.0.169:3000";
+
+    async function saveResult(name, score, correct) {
+        try {
+            const r = await fetch(SERVER + "/score", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, score, correct, total: QS.length })
+            });
+            if (!r.ok) throw new Error("HTTP " + r.status);
+        } catch(e) { console.warn("Could not save result:", e); }
+    }
+
+    // ── Questions ─────────────────────────────────────────────────────────────
+    const QS = [
+        {
+            q: "Which component is replacing pop-up windows of the RAP client in Airwave?",
+            opts: ["Slider","Sub_Chapter","Chapter"],
+            ans: 1,
+            explain: "Sub_Chapter replaces RAP pop-up windows -- it acts as an inline panel, keeping the user in context."
+        },
+        {
+            q: "How to disable the input field 'medical condition' for non-authorised users?",
+            opts:[
+                "Use the property 'hidden for' in Airconf and select authorised users",
+                "Create a vertical layer and a new business Context 'medical_condition'",
+                "Rely on ABS access rights so the facade determines control visibility"
+            ],
+            ans: 2,
+            explain: "ABS access rights is the correct approach -- the facade layer controls visibility based on user roles."
+        },
+        {
+            q: "What is the main difference between variants and vertical layers?",
+            opts:[
+                "A variant applies to a static condition",
+                "A vertical layer can be easily re-used in different files",
+                "Controls can be added but also deleted from a variant"
+            ],
+            ans: 2,
+            explain: "Unlike variants, vertical layers are reusable across files -- great for cross-cutting concerns."
+        },
+        {
+            q: "Control ID naming conventions -- pick the correct one:",
+            opts:["Customer account","bookings","customerList"],
+            ans: 2,
+            explain: "camelCase is the convention: 'customerList'. No spaces, no all-lowercase multi-words."
+        },
+        {
+            q: "Why would you use this config? controlId: 'animalDetail', adding 'type'",
+            opts:[
+                "We designed a list 'animalDetail' and now add a column 'type' to it",
+                "We added the 'type' control to a groupbox with controlId 'animalDetail'",
+                "We decided to put 'type' into a layoutbox"
+            ],
+            ans: 0,
+            explain: "The config targets a list named 'animalDetail' and appends a new column 'type' to it."
+        },
+        {
+            q: "I want to add a new spinbox control to the 'benefitsClassificationClaim' component. What kind of extension is that?",
+            opts:["Contribution","Vertical Layer","Normal change, no extension here"],
+            ans: 0,
+            explain: "Adding a new control to an existing component from another team = Contribution extension."
+        },
+        {
+            q: "Migrating motorbike contract pages to Airwave while keeping the rest of the original contract file -- correct approach?",
+            opts:[
+                "Create motorbike components and attach them to the navigation of the contract file",
+                "Create a new 'motorbike' file with a businessContext inheriting from 'contract'",
+                "Create a new root businessContext 'motorbike' and recreate all contract page nodes"
+            ],
+            ans: 1,
+            explain: "A new file with an inherited businessContext lets you reuse contract logic while adding motorbike-specific pages cleanly."
+        }
+    ];
+
+    let qIdx, score, streak, timeLeft, timerInt, answered, history;
+    const TMAX = 20;
+
+    function startGame() {
+        document.getElementById('intro').style.display='none';
+        document.getElementById('game').style.display='block';
+        document.getElementById('hud').style.display='flex';
+        document.getElementById('qcard').style.display='block';
+        qIdx=0; score=0; streak=0; history=[];
+        showQuestion();
+    }
+
+    function showQuestion() {
+        answered = false;
+        document.getElementById('next-btn').style.display='none';
+        document.getElementById('feedback').style.display='none';
+        const q = QS[qIdx];
+        document.getElementById('q-counter').textContent = (qIdx+1)+'/'+QS.length;
+        document.getElementById('q-badge').textContent = 'Q'+(qIdx+1)+' / '+QS.length;
+        document.getElementById('q-text').textContent = q.q;
+        document.getElementById('score-val').textContent = score;
+        document.getElementById('streak-val').textContent = '🔥'+streak;
+
+        const opts = document.getElementById('options');
+        opts.innerHTML = '';
+        q.opts.forEach((o,i) => {
+            const div = document.createElement('div');
+            div.className = 'opt';
+            div.innerHTML = `<div class="letter">${String.fromCharCode(65+i)}</div><span>${o}</span>`;
+            div.onclick = () => pick(i, div);
+            opts.appendChild(div);
+        });
+
+        // timer
+        clearInterval(timerInt);
+        timeLeft = TMAX;
+        updateTimerBar();
+        timerInt = setInterval(() => {
+            timeLeft--;
+            updateTimerBar();
+            if (timeLeft <= 0) { clearInterval(timerInt); timeUp(); }
+        }, 1000);
+    }
+
+    function updateTimerBar() {
+        const pct = (timeLeft / TMAX) * 100;
+        const bar = document.getElementById('timer-bar');
+        bar.style.width = pct+'%';
+        bar.style.background = pct > 50 ? 'linear-gradient(90deg,#0ea5e9,#6366f1)'
+            : pct > 25 ? 'linear-gradient(90deg,#f59e0b,#f97316)'
+                : 'linear-gradient(90deg,#ef4444,#dc2626)';
+    }
+
+    function timeUp() {
+        if (answered) return;
+        answered = true;
+        streak = 0;
+        lockOptions(-1);
+        showFeedback(false, "⏱ Time's up! " + QS[qIdx].explain);
+        history.push({q: QS[qIdx].q, ok: false});
+        document.getElementById('next-btn').style.display='block';
+    }
+
+    function pick(i, el) {
+        if (answered) return;
+        answered = true;
+        clearInterval(timerInt);
+        const correct = QS[qIdx].ans === i;
+        lockOptions(i);
+        if (correct) {
+            streak++;
+            const bonus = Math.max(0, Math.floor(timeLeft/TMAX * 100)) + (streak > 1 ? streak*10 : 0);
+            score += 100 + bonus;
+            document.getElementById('score-val').textContent = score;
+            document.getElementById('streak-val').textContent = '🔥'+streak;
+            showFeedback(true, streak > 2 ? `🔥 ${streak}x STREAK! +${100+bonus} pts — ${QS[qIdx].explain}` : `✅ Correct! +${100+bonus} pts — ${QS[qIdx].explain}`);
+            burst(el);
+            history.push({q: QS[qIdx].q, ok: true});
+        } else {
+            streak = 0;
+            document.getElementById('streak-val').textContent = '🔥0';
+            showFeedback(false, `❌ Wrong! ${QS[qIdx].explain}`);
+            history.push({q: QS[qIdx].q, ok: false});
+        }
+        document.getElementById('next-btn').style.display='block';
+    }
+
+    function lockOptions(chosen) {
+        const divs = document.querySelectorAll('.opt');
+        divs.forEach((d,i) => {
+            d.classList.add('locked');
+            if (i === QS[qIdx].ans) d.classList.add('correct');
+            else if (i === chosen) d.classList.add('wrong');
+            else d.classList.add('reveal');
+        });
+    }
+
+    function showFeedback(ok, msg) {
+        const fb = document.getElementById('feedback');
+        fb.className = ok ? 'ok' : 'ko';
+        fb.textContent = msg;
+        fb.style.display = 'block';
+    }
+
+    function nextQuestion() {
+        qIdx++;
+        if (qIdx >= QS.length) { showResults(); return; }
+        document.getElementById('qcard').style.animation='none';
+        void document.getElementById('qcard').offsetWidth;
+        document.getElementById('qcard').style.animation='slideIn .3s ease';
+        showQuestion();
+    }
+
+    function showResults() {
+        clearInterval(timerInt);
+        document.getElementById('game').style.display='none';
+        const res = document.getElementById('results');
+        res.style.display='block';
+        const pct = score / (QS.length * 200) * 100;
+        document.getElementById('final-score').textContent = score + ' pts';
+        const grades = [
+            [90,'🏆 Airconf Master! You could teach this.'],
+            [70,'🥈 Solid knowledge! Almost there.'],
+            [50,'🥉 Good start! Review the weak spots.'],
+            [0, '😅 Keep practicing — you\'ve got this!']
+        ];
+        const [,txt] = grades.find(([t]) => pct >= t);
+        const trophy = pct>=90?'🏆':pct>=70?'🥈':pct>=50?'🥉':'🎯';
+        document.getElementById('trophy').textContent = trophy;
+        document.getElementById('final-grade').textContent = txt;
+        saveResult(playerName, score, history.filter(h=>h.ok).length);
+
+        const bd = document.getElementById('breakdown');
+        bd.innerHTML = '<div style="font-weight:600;margin-bottom:.5rem;color:#94a3b8;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em">Question breakdown</div>';
+        history.forEach((h,i) => {
+            const row = document.createElement('div');
+            row.className = 'bk-row';
+            row.innerHTML = `<span>Q${i+1}: ${h.q.length>55?h.q.slice(0,55)+'…':h.q}</span><span class="${h.ok?'bk-ok':'bk-ko'}">${h.ok?'✓ +100':'✗ 0'}</span>`;
+            bd.appendChild(row);
+        });
+    }
+
+    function replay() {
+        document.getElementById('results').style.display='none';
+        document.getElementById('intro').style.display='block';
+    }
+
+    // Particle burst
+    function burst(el) {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width/2, cy = r.top + r.height/2;
+        for (let i=0;i<12;i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const angle = (i/12)*Math.PI*2;
+            const dist = 60+Math.random()*40;
+            p.style.cssText = `left:${cx}px;top:${cy}px;background:${['#38bdf8','#6366f1','#22c55e','#fbbf24'][i%4]};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px`;
+            document.body.appendChild(p);
+            setTimeout(()=>p.remove(), 800);
+        }
+    }
+</script>
+</body>
+</html>

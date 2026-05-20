@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airconf Quiz – Leaderboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{
+            font-family:'Inter',sans-serif;
+            background:#0a0e1a;
+            color:#e2e8f0;
+            min-height:100vh;
+            display:flex;flex-direction:column;align-items:center;
+            padding:2rem 1rem;
+            overflow-x:hidden;
+        }
+        /* stars */
+        .star{position:fixed;border-radius:50%;background:#fff;animation:twinkle linear infinite;pointer-events:none;}
+        @keyframes twinkle{0%,100%{opacity:.1}50%{opacity:.8}}
+
+        header{text-align:center;margin-bottom:2.5rem;position:relative;z-index:1;}
+        .title{font-family:'Orbitron',sans-serif;font-size:2.4rem;font-weight:900;
+            background:linear-gradient(135deg,#38bdf8,#6366f1);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            text-shadow:none;margin-bottom:.3rem;}
+        .subtitle{color:#475569;font-size:.95rem;letter-spacing:.05em;}
+        .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+            background:#22c55e;margin-right:6px;animation:pulse 1.5s infinite;}
+        @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #22c55e66}50%{box-shadow:0 0 0 6px transparent}}
+
+        .controls{display:flex;gap:.7rem;margin-bottom:1.5rem;z-index:1;position:relative;}
+        .ctrl-btn{
+            background:#0f172a;border:1px solid #1e293b;color:#94a3b8;
+            padding:.45rem 1.1rem;border-radius:8px;font-size:.82rem;cursor:pointer;
+            transition:all .2s;
+        }
+        .ctrl-btn:hover,.ctrl-btn.active{background:#1e293b;color:#38bdf8;border-color:#38bdf8;}
+
+        /* podium */
+        .podium{display:flex;align-items:flex-end;justify-content:center;gap:1rem;
+            margin-bottom:2.5rem;width:100%;max-width:600px;z-index:1;position:relative;}
+        .pod{display:flex;flex-direction:column;align-items:center;gap:.5rem;flex:1;}
+        .pod-avatar{
+            width:60px;height:60px;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.5rem;font-weight:900;font-family:'Orbitron',sans-serif;
+            border:3px solid transparent;
+        }
+        .pod-name{font-size:.82rem;font-weight:600;text-align:center;max-width:90px;
+            overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .pod-score{font-family:'Orbitron',sans-serif;font-size:.95rem;color:#38bdf8;}
+        .pod-block{
+            width:100%;border-radius:10px 10px 0 0;
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:900;
+        }
+        /* 1st */
+        .pod:nth-child(2) .pod-avatar{border-color:#fbbf24;background:#1a1505;color:#fbbf24;width:72px;height:72px;font-size:1.8rem;}
+        .pod:nth-child(2) .pod-block{height:120px;background:linear-gradient(180deg,#78350f,#1a1505);color:#fbbf24;box-shadow:0 0 30px #fbbf2444;}
+        /* 2nd */
+        .pod:nth-child(1) .pod-avatar{border-color:#94a3b8;background:#0f172a;color:#94a3b8;}
+        .pod:nth-child(1) .pod-block{height:85px;background:linear-gradient(180deg,#334155,#0f172a);color:#94a3b8;}
+        /* 3rd */
+        .pod:nth-child(3) .pod-avatar{border-color:#b45309;background:#1a0f05;color:#b45309;}
+        .pod:nth-child(3) .pod-block{height:65px;background:linear-gradient(180deg,#431407,#1a0f05);color:#b45309;}
+
+        /* table */
+        .board{width:100%;max-width:660px;z-index:1;position:relative;}
+        .row{
+            display:grid;grid-template-columns:48px 1fr 100px 80px;
+            align-items:center;gap:.8rem;
+            padding:.75rem 1rem;border-radius:10px;margin-bottom:.5rem;
+            background:#0f172a;border:1px solid #1e293b;
+            animation:rowIn .4s ease both;
+            transition:transform .15s;
+        }
+        .row:hover{transform:translateX(4px);border-color:#38bdf855;}
+        @keyframes rowIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+        .rank{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;text-align:center;}
+        .rank.r1{color:#fbbf24;} .rank.r2{color:#94a3b8;} .rank.r3{color:#b45309;}
+        .name{font-weight:600;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .bar-wrap{background:#1e293b;border-radius:4px;height:6px;overflow:hidden;}
+        .bar{height:100%;border-radius:4px;background:linear-gradient(90deg,#0ea5e9,#6366f1);transition:width .8s ease;}
+        .score-col{text-align:right;}
+        .score-num{font-family:'Orbitron',sans-serif;font-size:1rem;color:#38bdf8;}
+        .score-sub{font-size:.72rem;color:#475569;}
+        .acc{text-align:right;font-size:.85rem;color:#64748b;}
+        .acc b{color:#22c55e;}
+
+        .empty{text-align:center;color:#334155;padding:3rem;font-size:1rem;z-index:1;position:relative;}
+        .refresh-info{color:#334155;font-size:.75rem;margin-top:1.5rem;z-index:1;position:relative;}
+
+        /* confetti burst on new entry */
+        .confetti{position:fixed;pointer-events:none;z-index:99;width:8px;height:8px;border-radius:2px;animation:cf .9s ease-out forwards;}
+        @keyframes cf{to{transform:translate(var(--tx),var(--ty)) rotate(720deg) scale(0);opacity:0;}}
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="title">⚡ AIRCONF LEADERBOARD</div>
+    <div class="subtitle"><span class="live-dot"></span>Live results · auto-refresh every 10s</div>
+</header>
+
+<div class="controls">
+    <button class="ctrl-btn active" onclick="setSort('score',this)">🏆 By Score</button>
+    <button class="ctrl-btn" onclick="setSort('name',this)">🔤 By Name</button>
+    <button class="ctrl-btn" onclick="setSort('time',this)">🕐 By Time</button>
+    <button class="ctrl-btn" onclick="loadResults()">🔄 Refresh</button>
+</div>
+
+<div class="podium" id="podium"></div>
+<div class="board" id="board"></div>
+<div class="empty" id="empty" style="display:none">No results yet — waiting for participants… 🚀</div>
+<div class="refresh-info" id="refresh-info"></div>
+
+<script>
+    const SERVER = "http://192.168.0.169:3000";
+    let allResults = [], sortBy = 'score', prevCount = 0;
+
+    // stars
+    for(let i=0;i<80;i++){
+        const s=document.createElement('div'); s.className='star';
+        const sz=Math.random()*2+1;
+        s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s`;
+        document.body.appendChild(s);
+    }
+
+    function setSort(s, btn) {
+        sortBy = s;
+        document.querySelectorAll('.ctrl-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+    }
+
+    function avatarLetter(name) {
+        return (name||'?').trim().charAt(0).toUpperCase();
+    }
+
+    function sorted(arr) {
+        const a = [...arr];
+        if (sortBy==='score') a.sort((x,y)=>y.score-x.score);
+        else if (sortBy==='name') a.sort((x,y)=>x.name.localeCompare(y.name));
+        else a.sort((x,y)=>new Date(y.timestamp)-new Date(x.timestamp));
+        return a;
+    }
+
+    function render() {
+        const data = sorted(allResults);
+        const podEl = document.getElementById('podium');
+        const boardEl = document.getElementById('board');
+        const emptyEl = document.getElementById('empty');
+
+        if (!data.length) { podEl.innerHTML=''; boardEl.innerHTML=''; emptyEl.style.display='block'; return; }
+        emptyEl.style.display='none';
+
+        const maxScore = data[0]?.score || 1;
+
+        // podium (top 3 by score always)
+        const top3 = [...allResults].sort((a,b)=>b.score-a.score).slice(0,3);
+        const podOrder = top3.length>=2 ? [top3[1],top3[0],top3[2]].filter(Boolean) : top3;
+        const medals = top3.length>=2 ? ['🥈','🥇','🥉'] : ['🥇','🥈','🥉'];
+        podEl.innerHTML = '';
+        podOrder.forEach((p,i)=>{
+            const div = document.createElement('div'); div.className='pod';
+            div.innerHTML=`
+      <div class="pod-avatar">${avatarLetter(p.name)}</div>
+      <div class="pod-name">${p.name}</div>
+      <div class="pod-score">${p.score} pts</div>
+      <div class="pod-block">${medals[i]}</div>`;
+            podEl.appendChild(div);
+        });
+
+        // rows
+        boardEl.innerHTML='';
+        data.forEach((r,i)=>{
+            const rank = [...allResults].sort((a,b)=>b.score-a.score).indexOf(r)+1;
+            const acc = Math.round((r.correct/r.total)*100);
+            const pct = Math.round((r.score / (allResults.reduce((m,x)=>Math.max(m,x.score),1)))*100);
+            const row = document.createElement('div');
+            row.className='row';
+            row.style.animationDelay=(i*0.05)+'s';
+            row.innerHTML=`
+      <div class="rank ${rank<=3?'r'+rank:''}">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div>
+      <div>
+        <div class="name">${r.name}</div>
+        <div class="bar-wrap"><div class="bar" style="width:${pct}%"></div></div>
+      </div>
+      <div class="score-col">
+        <div class="score-num">${r.score}</div>
+        <div class="score-sub">points</div>
+      </div>
+      <div class="acc"><b>${acc}%</b><br><span>${r.correct}/${r.total}</span></div>`;
+            boardEl.appendChild(row);
+        });
+    }
+
+    function confettiBurst() {
+        for(let i=0;i<20;i++){
+            const c=document.createElement('div'); c.className='confetti';
+            const angle=(i/20)*Math.PI*2, dist=80+Math.random()*80;
+            c.style.cssText=`left:50%;top:30%;background:${['#38bdf8','#6366f1','#fbbf24','#22c55e'][i%4]};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px`;
+            document.body.appendChild(c);
+            setTimeout(()=>c.remove(),900);
+        }
+    }
+
+    async function loadResults() {
+        try {
+            const r = await fetch(SERVER+"/results?t="+Date.now());
+            allResults = await r.json();
+            if (allResults.length > prevCount && prevCount > 0) confettiBurst();
+            prevCount = allResults.length;
+            render();
+            document.getElementById('refresh-info').textContent =
+                `Last updated: ${new Date().toLocaleTimeString()} · ${allResults.length} participant${allResults.length!==1?'s':''}`;
+        } catch(e) {
+            document.getElementById('refresh-info').textContent = '⚠️ Cannot reach server — is node server.js running?';
+        }
+    }
+
+    loadResults();
+    setInterval(loadResults, 10000);
+</script>
+</body>
+</html>
