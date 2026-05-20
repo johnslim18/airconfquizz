@@ -6,7 +6,7 @@ const http = require("http");
 const fs   = require("fs");
 const path = require("path");
 
-const PORT    = 3000;
+const PORT    = process.env.PORT || 3000;
 const RESULTS = path.join(__dirname, "results.json");
 
 // Init results file if missing
@@ -82,9 +82,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`\n✅ Airconf Quiz Server running!`);
-    console.log(`   Local:    http://localhost:${PORT}`);
-    console.log(`   Network:  http://192.168.0.169:${PORT}  ← share this with participants`);
-    console.log(`   Results:  http://192.168.0.169:${PORT}/results`);
-    console.log(`   CSV:      http://192.168.0.169:${PORT}/results.csv\n`);
+    console.log(`\n✅ Airconf Quiz Server running on port ${PORT}`);
 });
